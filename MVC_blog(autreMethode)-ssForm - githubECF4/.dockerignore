@@ -1,0 +1,18 @@
+# Fichiers Git à exclure de l'image Docker
+.git
+.gitignore
+
+# Fichiers de configuration locale non nécessaires dans le conteneur
+.htaccess
+
+# Fichiers macOS inutiles
+.DS_Store
+**/.DS_Store
+
+# Logs
+*.log
+
+# Éditeurs
+.vscode/
+*.swp
+*.swo

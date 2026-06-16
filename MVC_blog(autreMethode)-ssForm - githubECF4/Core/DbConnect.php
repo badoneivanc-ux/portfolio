@@ -10,16 +10,23 @@ class DbConnect
     protected $connection;
     protected $request;
 
-    const SERVER = '127.0.0.1';
-    const PORT = '8889';
-    const USER = 'root';
-    const PASSWORD = 'root';
-    const BASE = 'Portfolio';
-
     public function __construct()
     {
+        // Lecture des variables d'environnement Docker (définies dans docker-compose.yml)
+        // Si absent (environnement MAMP local), on utilise les valeurs par défaut
+        $host     = getenv('DB_HOST')     ?: '127.0.0.1';
+        $port     = getenv('DB_PORT')     ?: '8889';
+        $dbname   = getenv('DB_NAME')     ?: 'Portfolio';
+        $user     = getenv('DB_USER')     ?: 'root';
+        $password = getenv('DB_PASSWORD') ?: 'root';
+
         try {
-            $this->connection = new PDO('mysql:host=' . self::SERVER . ';port=' . self::PORT . ';dbname=' . self::BASE, self::USER, self::PASSWORD);
+            // Construction du DSN (Data Source Name) PDO avec host, port et dbname
+            $this->connection = new PDO(
+                'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $dbname,
+                $user,
+                $password
+            );
 
             // Activation des erreurs PDO
             $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

@@ -2,7 +2,7 @@
 
 ## Description du projet
 
-Application web développée en PHP selon le pattern **MVC (Modèle - Vue - Contrôleur)** (pas de framework).  
+Application web développée en PHP selon le pattern MVC.  
 Elle permet d'afficher un portfolio avec une liste de créations et une page de contact.
 
 ---

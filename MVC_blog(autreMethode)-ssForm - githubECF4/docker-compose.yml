@@ -1,0 +1,109 @@
+# ============================================================
+# docker-compose.yml — Orchestration des services Portfolio
+# Version : Compose V2 (pas de champ "version" requis)
+# Services : app (PHP/Apache) + db (MySQL 8.0)
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # Service "app" : serveur PHP avec Apache
+  # ----------------------------------------------------------
+  app:
+    # Construit l'image depuis le Dockerfile du répertoire courant
+    build: .
+
+    # Nom du conteneur (optionnel, facilite les commandes docker)
+    container_name: portfolio_app
+
+    # Mapping de ports : port 8080 de l'hôte → port 80 du conteneur
+    # Accès via http://localhost:8080
+    ports:
+      - "8080:80"
+
+    # Dépendance : le service app attend que db soit démarré
+    # "service_healthy" attend que le healthcheck MySQL soit passé
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Variables d'environnement transmises à PHP/Apache
+    environment:
+      # Nom d'hôte MySQL : correspond au nom du service Docker "db"
+      DB_HOST: db
+      # Port MySQL standard dans Docker (pas 8889 qui est spécifique à MAMP)
+      DB_PORT: 3306
+      # Nom de la base de données
+      DB_NAME: Portfolio
+      # Utilisateur MySQL
+      DB_USER: root
+      # Mot de passe MySQL
+      DB_PASSWORD: root
+
+    # Montage du code source en volume pour le développement
+    # Les modifications locales sont immédiatement reflétées dans le conteneur
+    volumes:
+      - .:/var/www/html
+
+    # Réseau partagé entre les services app et db
+    networks:
+      - portfolio_network
+
+  # ----------------------------------------------------------
+  # Service "db" : base de données MySQL 8.0
+  # ----------------------------------------------------------
+  db:
+    # Image officielle MySQL 8.0 depuis Docker Hub
+    image: mysql:8.0
+
+    # Nom du conteneur
+    container_name: portfolio_db
+
+    # Variables d'environnement MySQL
+    environment:
+      # Mot de passe du compte root MySQL
+      MYSQL_ROOT_PASSWORD: root
+      # Nom de la base de données créée automatiquement au démarrage
+      MYSQL_DATABASE: Portfolio
+
+    # Volume persistant pour les données MySQL
+    # Les données survivent aux arrêts/redémarrages du conteneur
+    volumes:
+      - db_data:/var/lib/mysql
+      # Script SQL d'initialisation exécuté au premier démarrage
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # Mapping de ports : 3308 sur l'hôte (évite le conflit avec MAMP/3306 et autres conteneurs/3307)
+    # → 3306 dans le conteneur
+    ports:
+      - "3308:3306"
+
+    # Healthcheck : vérifie que MySQL est prêt à accepter des connexions
+    # avant que le service app ne démarre
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      # Délai avant le premier check
+      interval: 10s
+      # Délai maximum pour chaque check
+      timeout: 5s
+      # Nombre de tentatives avant de considérer le service comme "unhealthy"
+      retries: 5
+
+    # Réseau partagé
+    networks:
+      - portfolio_network
+
+# ----------------------------------------------------------
+# Volumes nommés
+# ----------------------------------------------------------
+volumes:
+  # Volume persistant pour les données MySQL
+  db_data:
+
+# ----------------------------------------------------------
+# Réseaux
+# ----------------------------------------------------------
+networks:
+  # Réseau bridge privé reliant app et db
+  portfolio_network:
+    driver: bridge
