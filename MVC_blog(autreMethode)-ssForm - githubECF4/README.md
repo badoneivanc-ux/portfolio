@@ -20,37 +20,6 @@ Elle permet d'afficher un portfolio avec une liste de créations et une page de 
 
 ---
 
-## Structure du projet
-
-```
-├── Autoloader.php          # Autochargement des classes par namespace
-├── Controllers/
-│   ├── Controller.php       # Contrôleur abstrait (render, redirect, sécurisation POST)
-│   ├── HomeController.php   # Page d'accueil
-│   ├── CreationController.php # CRUD des créations
-│   └── ContactController.php  # ✅ NOUVEAU - Page de contact
-├── Core/
-│   ├── Router.php           # Routeur (dispatching via $_GET controller/action)
-│   ├── DbConnect.php        # Connexion PDO à la base de données
-│   ├── Form.php             # Générateur de formulaires
-│   └── Validator.php        # Validation des données
-├── Entities/
-│   └── Creation.php         # Entité Création
-├── Models/
-│   └── CreationModel.php    # Accès aux données (requêtes SQL)
-├── Views/
-│   ├── base.php             # Template HTML principal (navbar, header, footer)
-│   ├── home/
-│   │   └── index.php        # Vue page d'accueil
-│   ├── creation/            # Vues CRUD créations
-│   └── contact/
-│       └── index.php        # ✅ NOUVEAU - Vue formulaire de contact
-└── public/
-    ├── index.php            # Point d'entrée unique de l'application
-    └── style.css            # Feuille de styles personnalisée
-```
-
----
 
 ## Fonctionnement du routeur
 
@@ -98,3 +67,115 @@ Le routeur lit les paramètres `$_GET['controller']` et `$_GET['action']` pour i
 ---
 
 
+
+
+
+
+## Dockerisation
+
+### Prérequis
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) 
+- Git installé
+
+---
+
+### Architecture des conteneurs
+
+
+| `portfolio_app` | `php:8.2-apache` (custom) | `8083` | `80` |
+| `portfolio_db` | `mysql:8.0` | `3308` | `3306` |
+
+---
+
+### Fichiers Docker
+
+| `Dockerfile` | Construit l'image PHP 8.2 + Apache avec `pdo_mysql`, `mod_rewrite` et VirtualHost |
+| `docker-compose.yml` | Orchestre les deux services (`app` + `db`), réseau, volumes, healthcheck |
+| `docker/init.sql` | Crée la table `creation` et insère des données au premier démarrage MySQL |
+| `.dockerignore` | Exclut `.git`, logs, `.DS_Store` du contexte de build |
+
+---
+
+
+
+
+
+
+### Étapes de déploiement
+
+#### Méthode 1 — Depuis le code source (GitHub)
+
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/badoneivanc-ux/portfolio.git
+cd portfolio
+git checkout page-contact
+cd "MVC_blog(autreMethode)-ssForm - githubECF4"
+
+# 2. Construire l'image et démarrer les conteneurs
+docker compose up -d --build
+
+# 3. Vérifier que les conteneurs sont actifs
+docker ps
+
+# 4. Accéder à l'application
+# → http://localhost:8083
+```
+
+
+---
+
+#### Méthode 2 — Depuis l'image Docker Hub (sans code source)
+
+L'image est disponible publiquement : **https://hub.docker.com/r/ivan1576/portfolio-app**
+
+```bash
+# 1. Récupérer les images
+docker pull ivan1576/portfolio-app:latest
+docker pull mysql:8.0
+
+# 2. Créer le réseau
+docker network create portfolio_network
+
+# 3. Démarrer MySQL
+docker run -d \
+  --name portfolio_db \
+  --network portfolio_network \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=Portfolio \
+  -p 3308:3306 \
+  mysql:8.0
+
+# 4. Démarrer l'app
+docker run -d \
+  --name portfolio_app \
+  --network portfolio_network \
+  -e DB_HOST=portfolio_db \
+  -e DB_PORT=3306 \
+  -e DB_NAME=Portfolio \
+  -e DB_USER=root \
+  -e DB_PASSWORD=root \
+  -p 8083:80 \
+  ivan1576/portfolio-app:latest
+
+# 5. Accéder à l'application
+# → http://localhost:8083
+```
+
+
+### Réinitialiser la base de données
+
+```bash
+docker compose down -v     # supprime le volume (BDD effacée)
+docker compose up -d       # recrée tout (init.sql rejoue automatiquement)
+```
+
+---
+
+### Liens du projet
+
+| **Dépôt GitHub** (branche `page-contact`) | https://github.com/badoneivanc-ux/portfolio/tree/page-contact |
+| **Image Docker Hub** | https://hub.docker.com/r/ivan1576/portfolio-app |
+
+---

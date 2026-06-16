@@ -1,8 +1,3 @@
-# ============================================================
-# docker-compose.yml — Orchestration des services Portfolio
-# Version : Compose V2 (pas de champ "version" requis)
-# Services : app (PHP/Apache) + db (MySQL 8.0)
-# ============================================================
 
 services:
 
@@ -16,10 +11,10 @@ services:
     # Nom du conteneur (optionnel, facilite les commandes docker)
     container_name: portfolio_app
 
-    # Mapping de ports : port 8080 de l'hôte → port 80 du conteneur
-    # Accès via http://localhost:8080
+    # Mapping de ports : port 8083 de l'hôte → port 80 du conteneur
+    # Accès via http://localhost:8083
     ports:
-      - "8080:80"
+      - "8083:80"
 
     # Dépendance : le service app attend que db soit démarré
     # "service_healthy" attend que le healthcheck MySQL soit passé
